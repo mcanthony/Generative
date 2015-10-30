@@ -37,6 +37,7 @@ void main(void) {
 	// float grey = max(cubicIn(sin(z * PI * 2.0)), 0.0);
 	// float grey = exponentialIn(1.0-sin(z * PI));
 	float grey = cubicIn(1.0-sin(z * PI));
+	// float grey = 1.0-sin(z * PI);
 
 	vec3 N = vNormal;
 	vec3 L = normalize(lightPos);

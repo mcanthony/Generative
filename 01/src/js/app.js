@@ -2,7 +2,7 @@
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
-	zGap:10,
+	zGap:7,
 	radius:100,
 	movingSpeed:.2,
 	noise:.0075,
