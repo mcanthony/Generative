@@ -50,9 +50,6 @@ float plane(vec3 pos) {
 
 float map(vec3 pos) {
 	float d = sphere(pos - bubblePos[0], bubbleSize[0]);
-	// float d1 = sphere(pos - bubblePos[1], bubbleSize[1]);
-
-	// float d = smin(d0, d1, metaK);
 
 	for(int i=1; i<NUM_BALLS; i++) {
 		vec3 bPos = bubblePos[i];
@@ -82,6 +79,7 @@ vec3 computeNormal(vec3 pos) {
 const vec3 lightColorYellow = vec3(1.0, 1.0, .95);
 const vec3 lightColorBlue = vec3(.95, .95, 1.0);
 const vec3 lightDirection = vec3(1.0, .75, -1.0);
+const vec4 lightBlue = vec4(186.0, 209.0, 222.0, 255.0)/255.0;
 // const vec3 lightDirection = vec3(1.0, 1.0, 0.0);
 
 
@@ -97,6 +95,9 @@ float specular(vec3 normal, vec3 dir) {
 //	COLOR
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+	pos.xz = rotate(pos.xz, sin(time*.2484351) * .5);
+	pos.yz = rotate(pos.yz, cos(time*.179864) * .5);
+
 	float a = 1.0;
 	float grey = fract(pos.z * zGap - time * .1);
 	grey = 1.0 - sin(grey * PI);
@@ -114,7 +115,7 @@ void main(void) {
 	vec3 dir = normalize(vec3(uv, focus));	//	ray
 	
 	vec4 color = vec4(.0);
-	float prec = pow(.1, 4.0);
+	float prec = pow(.1, 5.0);
 	float d;
 	
 	for(int i=0; i<NUM_ITER; i++) {
@@ -132,5 +133,5 @@ void main(void) {
 	}
 	
 
-    gl_FragColor = vec4(color);
+    gl_FragColor = vec4(color*lightBlue);
 }

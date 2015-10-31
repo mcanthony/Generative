@@ -5,11 +5,11 @@ var dat = require("dat-gui");
 
 window.params = {
 	focus:1.0,
-	numIter:100,
-	numBubble:5.0,
+	numIter:64,
+	numBubble:7.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:10.0
+	maxDist:6.0
 };
 
 (function() {
@@ -4517,6 +4517,7 @@ var Bubble = require("./Bubble");
 var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
+	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
 
@@ -4543,7 +4544,7 @@ p.reset = function() {
 
 	for(var i=0; i<params.numBubble; i++) {
 		var pos = [random(-range, range), random(-range, range), random(-range, range)];
-		var size = random(1.0, 2.5);
+		var size = random(.75, 1.75);
 		var b = new Bubble(pos, size);
 		this._bubbles.push(b);
 	}
@@ -4578,7 +4579,7 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\n\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\n//\tINTERSECT / MAP / NORMAL\n\nfloat map(vec3 pos) {\n\tfloat d = sphere(pos - bubblePos[0], bubbleSize[0]);\n\t// float d1 = sphere(pos - bubblePos[1], bubbleSize[1]);\n\n\t// float d = smin(d0, d1, metaK);\n\n\tfor(int i=1; i<NUM_BALLS; i++) {\n\t\tvec3 bPos = bubblePos[i];\n\t\tfloat bSize = bubbleSize[i];\n\t\tfloat ds = sphere(pos - bubblePos[i], bubbleSize[i]);\n\t\td = smin(d, ds);\n\t}\n\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.01, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\nconst vec3 lightColorYellow = vec3(1.0, 1.0, .95);\nconst vec3 lightColorBlue = vec3(.95, .95, 1.0);\nconst vec3 lightDirection = vec3(1.0, .75, -1.0);\n// const vec3 lightDirection = vec3(1.0, 1.0, 0.0);\n\n\nfloat diffuse(vec3 normal) {\n\treturn max(dot(normal, normalize(lightDirection)), 0.0);\n}\n\nfloat specular(vec3 normal, vec3 dir) {\n\tvec3 h = normalize(normal - dir);\n\treturn pow(max(dot(h, normal), 0.0), 40.0);\n}\n\n//\tCOLOR\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat a = 1.0;\n\tfloat grey = fract(pos.z * zGap - time * .1);\n\tgrey = 1.0 - sin(grey * PI);\n\tgrey = pow(grey, 3.0);\n\tfloat diff = diffuse(normal) * .75;\n\tfloat spec = specular(normal, dir);\n\tvec3 color = vec3(grey) + diff * lightColorBlue;\n\n\treturn vec4(color, a*color.r);\n}\n\nvoid main(void) {\n\tvec3 pos = vec3(0.0, 1.5, -10.0);\t\t//\tposition of camera\n\t// vec3 orgPos = vec3(0.0, 1.5, -10.0);\n\tvec3 dir = normalize(vec3(uv, focus));\t//\tray\n\t\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 4.0);\n\tfloat d;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\tcolor = vec4(1.0);\n\t\t\tvec3 normal = computeNormal(pos);\n\t\t\tcolor = getColor(pos, dir, normal);\n\t\t\tbreak;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\t\n\n    gl_FragColor = vec4(color);\n}";
+	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\n\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\n//\tINTERSECT / MAP / NORMAL\n\nfloat map(vec3 pos) {\n\tfloat d = sphere(pos - bubblePos[0], bubbleSize[0]);\n\n\tfor(int i=1; i<NUM_BALLS; i++) {\n\t\tvec3 bPos = bubblePos[i];\n\t\tfloat bSize = bubbleSize[i];\n\t\tfloat ds = sphere(pos - bubblePos[i], bubbleSize[i]);\n\t\td = smin(d, ds);\n\t}\n\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.01, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\nconst vec3 lightColorYellow = vec3(1.0, 1.0, .95);\nconst vec3 lightColorBlue = vec3(.95, .95, 1.0);\nconst vec3 lightDirection = vec3(1.0, .75, -1.0);\nconst vec4 lightBlue = vec4(186.0, 209.0, 222.0, 255.0)/255.0;\n// const vec3 lightDirection = vec3(1.0, 1.0, 0.0);\n\n\nfloat diffuse(vec3 normal) {\n\treturn max(dot(normal, normalize(lightDirection)), 0.0);\n}\n\nfloat specular(vec3 normal, vec3 dir) {\n\tvec3 h = normalize(normal - dir);\n\treturn pow(max(dot(h, normal), 0.0), 40.0);\n}\n\n//\tCOLOR\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tpos.xz = rotate(pos.xz, sin(time*.2484351) * .5);\n\tpos.yz = rotate(pos.yz, cos(time*.179864) * .5);\n\n\tfloat a = 1.0;\n\tfloat grey = fract(pos.z * zGap - time * .1);\n\tgrey = 1.0 - sin(grey * PI);\n\tgrey = pow(grey, 3.0);\n\tfloat diff = diffuse(normal) * .75;\n\tfloat spec = specular(normal, dir);\n\tvec3 color = vec3(grey) + diff * lightColorBlue;\n\n\treturn vec4(color, a*color.r);\n}\n\nvoid main(void) {\n\tvec3 pos = vec3(0.0, 1.5, -10.0);\t\t//\tposition of camera\n\t// vec3 orgPos = vec3(0.0, 1.5, -10.0);\n\tvec3 dir = normalize(vec3(uv, focus));\t//\tray\n\t\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\tcolor = vec4(1.0);\n\t\t\tvec3 normal = computeNormal(pos);\n\t\t\tcolor = getColor(pos, dir, normal);\n\t\t\tbreak;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\t\n\n    gl_FragColor = vec4(color*lightBlue);\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
 	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);

@@ -6,6 +6,7 @@ var Bubble = require("./Bubble");
 var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
+	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
 
@@ -32,7 +33,7 @@ p.reset = function() {
 
 	for(var i=0; i<params.numBubble; i++) {
 		var pos = [random(-range, range), random(-range, range), random(-range, range)];
-		var size = random(1.0, 2.5);
+		var size = random(.75, 1.75);
 		var b = new Bubble(pos, size);
 		this._bubbles.push(b);
 	}
