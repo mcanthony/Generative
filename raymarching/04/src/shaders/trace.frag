@@ -98,6 +98,17 @@ float specular(vec3 normal, vec3 dir) {
 
 //	COLOR
 
+const float maxLength = length(vec3(1.0));
+vec3 color0 = vec3(18.0, 19.0, 24.0)/255.0;
+vec3 color1 = vec3(255.0, 250.0, 237.0)/255.0;
+float cubicIn(float t) {
+  return t * t * t;
+}
+
+vec3 cubicIn(vec3 value){
+	return vec3(cubicIn(value.r), cubicIn(value.g), cubicIn(value.b));
+}
+
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	pos.xz = rotate(pos.xz, sin(time*.2484351) * .5);
 	pos.yz = rotate(pos.yz, cos(time*.179864) * .5);
@@ -109,6 +120,10 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	float diff = diffuse(normal) * .75;
 	float spec = specular(normal, dir);
 	vec3 color = vec3(grey) + diff * lightColorBlue + spec * lightColorYellow * 1.0;
+	color = cubicIn(color);
+	float l = length(color.rgb)/maxLength;
+	vec3 mixColor = mix(color0, color1, l);
+	color.rgb = mixColor;
 
 	return vec4(color, a*color.r);
 }
